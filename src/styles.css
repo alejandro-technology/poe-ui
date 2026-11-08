@@ -627,6 +627,58 @@ textarea:focus-visible {
   color: var(--error);
 }
 
+.mcp-dot--disabled {
+  background-color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.mcp-toggle {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.mcp-toggle:disabled {
+  cursor: progress;
+  opacity: 0.45;
+}
+
+.mcp-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mcp-meter-button {
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background-color: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  transition: color var(--transition), background-color var(--transition),
+    border-color var(--transition);
+}
+
+.mcp-meter-button:hover {
+  color: var(--accent);
+  background-color: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.mcp-item-total {
+  margin: 2px 2px 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
 .message-bubble-tool {
   display: block;
   margin-bottom: 6px;
@@ -846,6 +898,122 @@ textarea:focus-visible {
 }
 
 /* ------------------------------------------------------------
+   Medidor de tokens (modal)
+   ------------------------------------------------------------ */
+
+.meter-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background-color: rgba(11, 13, 22, 0.7);
+}
+
+.meter-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 520px;
+  padding: 18px 20px;
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+
+.meter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.meter-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.meter-close {
+  width: 26px;
+  height: 26px;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--text-secondary);
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition), background-color var(--transition);
+}
+
+.meter-close:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-surface);
+}
+
+.meter-textarea {
+  width: 100%;
+  min-height: 180px;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  resize: vertical;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.meter-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.meter-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.meter-count {
+  display: block;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.meter-count--pending {
+  animation: poe-pulse 1.6s ease-in-out infinite;
+}
+
+.meter-count-value {
+  display: inline-block;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.meter-count-unit {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.meter-error {
+  margin: 0;
+}
+
+.meter-note {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+/* ------------------------------------------------------------
    Animaciones
    ------------------------------------------------------------ */
 
@@ -867,5 +1035,29 @@ textarea:focus-visible {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ------------------------------------------------------------
+   Responsive
+   ------------------------------------------------------------ */
+
+@media (max-width: 640px) {
+  .meter-overlay {
+    padding: 12px;
+  }
+
+  .meter-panel {
+    width: 90%;
+    max-width: none;
+    padding: 14px 16px;
+  }
+
+  .meter-textarea {
+    min-height: 140px;
+  }
+
+  .meter-count-value {
+    font-size: 22px;
   }
 }

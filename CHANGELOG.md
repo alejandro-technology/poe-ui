@@ -4,6 +4,26 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y ver
 
 ## [Unreleased]
 
+### 2026-11-08 — Switches MCP, tokens por server y medidor de tokens
+
+#### Added
+
+- **Switch de habilitación por servidor MCP (`src/modules/core/core.client.ts`, `src/modules/chat/hooks/useMcpServers.ts`, `src/modules/chat/components/McpServers.tsx`)** — `setMcpServerEnabled(name, enabled)` consume `PATCH /api/mcp/servers/:name`. Cada item del sidebar incluye un checkbox `mcp-toggle`.
+  - `useMcpServers` expone `toggling` y `toggleServer()`: actualización optimista, reemplazo con el status devuelto por el core y rollback del server si falla (con banner "No se pudo cambiar el estado del servidor MCP.").
+  - El punto de estado distingue tres casos: verde (conectado), rojo (habilitado sin conexión) y gris `mcp-dot--disabled` (deshabilitado).
+
+- **Tokens estimados por servidor y total (`src/modules/core/dto.ts`, `src/modules/chat/components/McpServers.tsx`)** — `McpServerStatusDto` incorpora `enabled` y `estimatedTokens`. El detalle muestra `N tools · ≈ X tok` y la fila `mcp-item-total` suma los servidores habilitados y conectados.
+
+- **Medidor de tokens (`src/modules/chat/components/TokenMeter.tsx`, `src/modules/core/core.client.ts`)** — modal abierto desde el botón `+ Medidor de tokens` del header de la sección MCP. `countTextTokens(text)` consume `POST /api/tokens/count`.
+  - Caracteres en tiempo real; tokens con debounce de 500 ms, estado "midiendo…" y descarte de respuestas desactualizadas mediante `requestIdRef`.
+  - Cierra con la X, click fuera del panel o `Escape`. El texto se conserva entre aperturas y se cuenta al abrir.
+
+#### Changed
+
+- `Sidebar` y `ChatLayout` propagan `mcpToggling` y `onToggleMcp`.
+- Nuevo `TokenCountDto` en `dto.ts`.
+- `styles.css`: clases `.mcp-toggle`, `.mcp-dot--disabled`, `.mcp-item-total`, `.mcp-section-header`, `.mcp-meter-button`, `.meter-*` y un media query responsive para el medidor (`max-width: 640px`).
+
 ### 2026-11-08 — Tokens por conversación, eliminación e instrucciones de sistema
 
 #### Added

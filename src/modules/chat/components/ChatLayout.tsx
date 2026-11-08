@@ -25,6 +25,8 @@ export function ChatLayout() {
     servers: mcpServers,
     loading: mcpLoading,
     error: mcpError,
+    toggling: mcpToggling,
+    toggleServer,
   } = useMcpServers();
   const {
     activeConversationId,
@@ -127,6 +129,8 @@ export function ChatLayout() {
         mcpServers={mcpServers}
         mcpLoading={mcpLoading}
         mcpError={mcpError}
+        mcpToggling={mcpToggling}
+        onToggleMcp={(name, enabled) => void toggleServer(name, enabled)}
         onSelect={handleSelect}
         onNewChat={handleNewChat}
         onDelete={(id) => void handleDelete(id)}

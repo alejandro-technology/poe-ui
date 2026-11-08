@@ -1,18 +1,28 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { McpServerStatusDto } from "../../core";
-import { getMcpServers } from "../../core";
+import { getMcpServers, setMcpServerEnabled } from "../../core";
 
 export interface UseMcpServersResult {
   servers: McpServerStatusDto[];
   loading: boolean;
   error: string | null;
+  toggling: string | null;
   refresh: () => Promise<void>;
+  toggleServer: (name: string, enabled: boolean) => Promise<void>;
+}
+
+function replaceServer(
+  list: McpServerStatusDto[],
+  next: McpServerStatusDto,
+): McpServerStatusDto[] {
+  return list.map((server) => (server.name === next.name ? next : server));
 }
 
 export function useMcpServers(): UseMcpServersResult {
   const [servers, setServers] = useState<McpServerStatusDto[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [toggling, setToggling] = useState<string | null>(null);
   const mountedRef = useRef<boolean>(true);
 
   const load = useCallback(async (showLoading: boolean): Promise<void> => {
@@ -36,6 +46,33 @@ export function useMcpServers(): UseMcpServersResult {
     await load(true);
   }, [load]);
 
+  const toggleServer = useCallback(
+    async (name: string, enabled: boolean): Promise<void> => {
+      const previous = servers.find((server) => server.name === name);
+      if (!previous) return;
+
+      setToggling(name);
+      setError(null);
+      setServers((list) =>
+        list.map((server) =>
+          server.name === name ? { ...server, enabled } : server,
+        ),
+      );
+      try {
+        const updated = await setMcpServerEnabled(name, enabled);
+        if (!mountedRef.current) return;
+        setServers((list) => replaceServer(list, updated));
+      } catch {
+        if (!mountedRef.current) return;
+        setServers((list) => replaceServer(list, previous));
+        setError("No se pudo cambiar el estado del servidor MCP.");
+      } finally {
+        if (mountedRef.current) setToggling(null);
+      }
+    },
+    [servers],
+  );
+
   useEffect(() => {
     mountedRef.current = true;
     void load(true);
@@ -48,5 +85,5 @@ export function useMcpServers(): UseMcpServersResult {
     };
   }, [load]);
 
-  return { servers, loading, error, refresh };
+  return { servers, loading, error, toggling, refresh, toggleServer };
 }

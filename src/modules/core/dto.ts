@@ -61,4 +61,11 @@ export interface McpServerStatusDto {
   url: string | null;
   connected: boolean;
   tools: string[];
+  enabled: boolean;
+  estimatedTokens: number | null;
+}
+
+export interface TokenCountDto {
+  tokens: number;
+  characters: number;
 }

@@ -13,6 +13,8 @@ export interface SidebarProps {
   mcpServers: McpServerStatusDto[];
   mcpLoading: boolean;
   mcpError: string | null;
+  mcpToggling: string | null;
+  onToggleMcp: (name: string, enabled: boolean) => void;
   onSelect: (id: string) => void;
   onNewChat: () => void;
   onDelete: (id: string) => void;
@@ -28,6 +30,8 @@ export function Sidebar({
   mcpServers,
   mcpLoading,
   mcpError,
+  mcpToggling,
+  onToggleMcp,
   onSelect,
   onNewChat,
   onDelete,
@@ -70,6 +74,8 @@ export function Sidebar({
         servers={mcpServers}
         loading={mcpLoading}
         error={mcpError}
+        mcpToggling={mcpToggling}
+        onToggleMcp={onToggleMcp}
       />
     </aside>
   );

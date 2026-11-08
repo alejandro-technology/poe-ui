@@ -7,6 +7,7 @@ import type {
   McpServerStatusDto,
   SendMessageInput,
   SendMessageResultDto,
+  TokenCountDto,
 } from "./dto";
 import { CoreApiError, fetchJson } from "./http";
 
@@ -67,6 +68,26 @@ export function updateConversation(
 
 export function getMcpServers(): Promise<McpServerStatusDto[]> {
   return fetchJson<McpServerStatusDto[]>("/api/mcp/servers");
+}
+
+export function setMcpServerEnabled(
+  name: string,
+  enabled: boolean,
+): Promise<McpServerStatusDto> {
+  return fetchJson<McpServerStatusDto>(
+    `/api/mcp/servers/${encodeURIComponent(name)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ enabled }),
+    },
+  );
+}
+
+export function countTextTokens(text: string): Promise<TokenCountDto> {
+  return fetchJson<TokenCountDto>("/api/tokens/count", {
+    method: "POST",
+    body: JSON.stringify({ text }),
+  });
 }
 
 function isChatStreamEvent(value: unknown): value is ChatStreamEventDto {
