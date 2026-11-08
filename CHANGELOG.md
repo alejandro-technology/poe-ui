@@ -4,6 +4,26 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y ver
 
 ## [Unreleased]
 
+### 2026-11-08 — Tokens por conversación, eliminación e instrucciones de sistema
+
+#### Added
+
+- **Total de tokens por conversación (`src/modules/core/dto.ts`, `src/modules/core/core.client.ts`, `src/modules/core/format.ts`)** — `ConversationDto` incorpora `inputTokens` y `outputTokens`; el stream acepta el nuevo evento `usage` (uno por ronda del LLM) y se acumula en vivo. Nuevos helpers `totalTokens()` y `formatTokens()` (formato `es-AR`).
+  - `useChat` expone `activeTotalTokens`: se inicializa al seleccionar una conversación, vuelve a `0` con el primer `meta` de un chat nuevo y suma cada evento `usage`.
+  - `ConversationItem` muestra un chip `conversation-item-tokens`; para la conversación activa la sidebar usa `activeTotalTokens` como override.
+
+- **Eliminación de conversaciones con confirmación en dos pasos (`src/modules/core/core.client.ts`, `src/modules/chat/components/ConversationItem.tsx`, `Sidebar.tsx`, `ChatLayout.tsx`)** — `deleteConversation(id)` consume `DELETE /api/conversations/:id`. El botón `conversation-item-delete` pasa a "¿Eliminar?" al primer click y ejecuta al segundo (se resetea al click en la fila, blur o 4s). La fila se envuelve en `div.conversation-item-row` para evitar botones anidados. Al eliminar la conversación activa se inicia un chat nuevo y los errores se muestran en el banner existente.
+
+- **Edición de instrucciones de sistema desde la UI (`src/modules/core/core.client.ts`, `src/modules/chat/hooks/useChat.ts`, `src/modules/chat/components/ChatLayout.tsx`)** — `updateConversation(id, { systemPrompt })` consume `PATCH /api/conversations/:id`. El topbar suma el botón "✎ Instrucciones" que abre un panel inline con textarea y acciones Guardar/Cancelar.
+  - `useChat` expone `activeSystemPrompt` y `saveSystemPrompt()`: si la conversación está activa se persiste con `PATCH`; si es un chat nuevo se guarda como prompt pendiente y se envía en el body de `streamChatMessage`.
+  - Guardar queda deshabilitado con el texto vacío o sin cambios; se muestra el estado "Guardando…" y los errores en el panel.
+
+#### Changed
+
+- `Sidebar` recibe `activeTotalTokens` y `onDelete`; `ChatLayout` propaga los nuevos handlers.
+- El banner de error del panel de chat ahora también refleja los fallos de eliminación.
+- `McpServerStatusDto` alineado con el core (`transport: "http" | "stdio"` y `url: string | null` para servidores stdio).
+
 ### 2026-11-08 — Streaming del chat (SSE) + panel de servidores MCP
 
 #### Added

@@ -650,6 +650,202 @@ textarea:focus-visible {
 }
 
 /* ------------------------------------------------------------
+   Tokens / eliminación de conversaciones
+   ------------------------------------------------------------ */
+
+.conversation-item-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  border-radius: var(--radius-sm);
+}
+
+.conversation-item-row .conversation-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.conversation-item-tokens {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 3px;
+  padding: 1px 7px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary);
+  background-color: var(--neutral-soft);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.conversation-item-delete {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-top: 6px;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--text-muted);
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  opacity: 0.55;
+  transition: color var(--transition), background-color var(--transition),
+    border-color var(--transition), opacity var(--transition);
+}
+
+.conversation-item-delete:hover {
+  color: var(--error);
+  background-color: var(--error-soft);
+  border-color: rgba(247, 118, 142, 0.35);
+  opacity: 1;
+}
+
+.conversation-item-delete--confirming {
+  width: auto;
+  padding: 0 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--error);
+  background-color: var(--error-soft);
+  border-color: rgba(247, 118, 142, 0.45);
+  opacity: 1;
+}
+
+/* ------------------------------------------------------------
+   Instrucciones de sistema
+   ------------------------------------------------------------ */
+
+.system-prompt-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background-color: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: color var(--transition), background-color var(--transition),
+    border-color var(--transition);
+}
+
+.system-prompt-button:hover {
+  color: var(--accent);
+  background-color: var(--accent-soft);
+  border-color: rgba(122, 162, 247, 0.4);
+}
+
+.system-prompt-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 20px 14px;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--bg-panel);
+}
+
+.system-prompt-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.system-prompt-textarea {
+  width: 100%;
+  min-height: 76px;
+  padding: 10px 12px;
+  resize: vertical;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background-color: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.system-prompt-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.system-prompt-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(122, 162, 247, 0.16);
+}
+
+.system-prompt-textarea:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.system-prompt-error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--error);
+}
+
+.system-prompt-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.system-prompt-save {
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-on-accent);
+  background-color: var(--accent);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  transition: background-color var(--transition), opacity var(--transition);
+}
+
+.system-prompt-save:hover:not(:disabled) {
+  background-color: var(--accent-strong);
+}
+
+.system-prompt-save:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.system-prompt-cancel {
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background-color: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: color var(--transition), background-color var(--transition),
+    border-color var(--transition);
+}
+
+.system-prompt-cancel:hover:not(:disabled) {
+  color: var(--text-primary);
+  background-color: var(--bg-surface);
+  border-color: var(--border-subtle);
+}
+
+.system-prompt-cancel:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ------------------------------------------------------------
    Animaciones
    ------------------------------------------------------------ */
 

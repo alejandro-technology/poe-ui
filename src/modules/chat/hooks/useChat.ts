@@ -4,6 +4,7 @@ import {
   CoreApiError,
   getConversation,
   streamChatMessage,
+  updateConversation,
 } from "../../core";
 
 export interface UiChatMessage {
@@ -17,6 +18,8 @@ export interface UiChatMessage {
 
 export interface UseChatResult {
   activeConversationId: string | null;
+  activeTotalTokens: number | null;
+  activeSystemPrompt: string | null;
   messages: UiChatMessage[];
   isSending: boolean;
   messagesLoading: boolean;
@@ -25,6 +28,7 @@ export interface UseChatResult {
   selectConversation: (id: string) => Promise<void>;
   startNewConversation: () => void;
   sendMessage: (text: string) => Promise<void>;
+  saveSystemPrompt: (prompt: string) => Promise<void>;
 }
 
 function describeError(err: unknown, fallback: string): string {
@@ -36,6 +40,13 @@ export function useChat(): UseChatResult {
   const [activeConversationId, setActiveConversationId] = useState<
     string | null
   >(null);
+  const [activeTotalTokens, setActiveTotalTokens] = useState<number | null>(
+    null,
+  );
+  const [activeSystemPrompt, setActiveSystemPrompt] = useState<string | null>(
+    "",
+  );
+  const [pendingSystemPrompt, setPendingSystemPrompt] = useState<string>("");
   const [messages, setMessages] = useState<UiChatMessage[]>([]);
   const [isSending, setIsSending] = useState<boolean>(false);
   const [messagesLoading, setMessagesLoading] = useState<boolean>(false);
@@ -50,10 +61,15 @@ export function useChat(): UseChatResult {
       const requestId = ++selectionRequestRef.current;
       setActiveConversationId(id);
       setSendError(null);
+      setPendingSystemPrompt("");
       setMessagesLoading(true);
       try {
         const conversation = await getConversation(id);
         if (requestId !== selectionRequestRef.current) return;
+        setActiveTotalTokens(
+          conversation.inputTokens + conversation.outputTokens,
+        );
+        setActiveSystemPrompt(conversation.systemPrompt);
         setMessages(
           conversation.messages.map((message) => ({
             key: message.id,
@@ -79,10 +95,30 @@ export function useChat(): UseChatResult {
   const startNewConversation = useCallback((): void => {
     selectionRequestRef.current += 1;
     setActiveConversationId(null);
+    setActiveTotalTokens(null);
+    setActiveSystemPrompt("");
+    setPendingSystemPrompt("");
     setMessages([]);
     setMessagesLoading(false);
     setSendError(null);
   }, []);
+
+  const saveSystemPrompt = useCallback(
+    async (prompt: string): Promise<void> => {
+      if (activeConversationId === null) {
+        setPendingSystemPrompt(prompt);
+        setActiveSystemPrompt(prompt);
+        return;
+      }
+
+      const conversation = await updateConversation(activeConversationId, {
+        systemPrompt: prompt,
+      });
+      setActiveSystemPrompt(conversation.systemPrompt);
+      setLastUpdateToken((token) => token + 1);
+    },
+    [activeConversationId],
+  );
 
   const sendMessage = useCallback(
     async (text: string): Promise<void> => {
@@ -132,11 +168,17 @@ export function useChat(): UseChatResult {
         });
       };
 
+      const systemPrompt =
+        activeConversationId === null && pendingSystemPrompt.trim().length > 0
+          ? pendingSystemPrompt.trim()
+          : undefined;
+
       try {
         await streamChatMessage(
           {
             message: content,
             conversationId: activeConversationId ?? undefined,
+            systemPrompt,
           },
           (event) => {
             switch (event.type) {
@@ -145,6 +187,8 @@ export function useChat(): UseChatResult {
                 markUserSent();
                 if (activeConversationId === null) {
                   setActiveConversationId(event.conversationId);
+                  setActiveTotalTokens(0);
+                  setPendingSystemPrompt("");
                 }
                 const key = crypto.randomUUID();
                 assistantKey = key;
@@ -209,6 +253,13 @@ export function useChat(): UseChatResult {
                 );
                 break;
               }
+              case "usage": {
+                setActiveTotalTokens(
+                  (prev) =>
+                    (prev ?? 0) + event.inputTokens + event.outputTokens,
+                );
+                break;
+              }
               case "reply_saved": {
                 if (!assistantKey) break;
                 const oldKey = assistantKey;
@@ -254,11 +305,13 @@ export function useChat(): UseChatResult {
         }
       }
     },
-    [activeConversationId, isSending],
+    [activeConversationId, isSending, pendingSystemPrompt],
   );
 
   return {
     activeConversationId,
+    activeTotalTokens,
+    activeSystemPrompt,
     messages,
     isSending,
     messagesLoading,
@@ -267,5 +320,6 @@ export function useChat(): UseChatResult {
     selectConversation,
     startNewConversation,
     sendMessage,
+    saveSystemPrompt,
   };
 }

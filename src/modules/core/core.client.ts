@@ -45,6 +45,26 @@ export function getConversation(
   );
 }
 
+export function deleteConversation(id: string): Promise<{ ok: boolean }> {
+  return fetchJson<{ ok: boolean }>(
+    `/api/conversations/${encodeURIComponent(id)}`,
+    { method: "DELETE" },
+  );
+}
+
+export function updateConversation(
+  id: string,
+  patch: { systemPrompt: string },
+): Promise<ConversationDto> {
+  return fetchJson<ConversationDto>(
+    `/api/conversations/${encodeURIComponent(id)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    },
+  );
+}
+
 export function getMcpServers(): Promise<McpServerStatusDto[]> {
   return fetchJson<McpServerStatusDto[]>("/api/mcp/servers");
 }
@@ -58,6 +78,7 @@ function isChatStreamEvent(value: unknown): value is ChatStreamEventDto {
     type === "tool_use" ||
     type === "tool_result" ||
     type === "done" ||
+    type === "usage" ||
     type === "reply_saved" ||
     type === "error"
   );

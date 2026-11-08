@@ -15,6 +15,8 @@ export interface ConversationDto {
   model: string;
   createdAt: string;
   updatedAt: string;
+  inputTokens: number;
+  outputTokens: number;
 }
 
 export interface ConversationWithMessagesDto extends ConversationDto {
@@ -44,12 +46,19 @@ export type ChatStreamEventDto =
   | { type: "tool_use"; name: string }
   | { type: "tool_result"; name: string; isError: boolean }
   | { type: "done"; text: string }
+  | {
+      type: "usage";
+      conversationId: string;
+      inputTokens: number;
+      outputTokens: number;
+    }
   | { type: "reply_saved"; conversationId: string; replyId: string }
   | { type: "error"; message: string };
 
 export interface McpServerStatusDto {
   name: string;
-  url: string;
+  transport: "http" | "stdio";
+  url: string | null;
   connected: boolean;
   tools: string[];
 }

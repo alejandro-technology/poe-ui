@@ -6,6 +6,7 @@ import { McpServers } from "./McpServers";
 export interface SidebarProps {
   conversations: ConversationDto[];
   activeId: string | null;
+  activeTotalTokens: number | null;
   loading: boolean;
   error: string | null;
   online: boolean | null;
@@ -14,11 +15,13 @@ export interface SidebarProps {
   mcpError: string | null;
   onSelect: (id: string) => void;
   onNewChat: () => void;
+  onDelete: (id: string) => void;
 }
 
 export function Sidebar({
   conversations,
   activeId,
+  activeTotalTokens,
   loading,
   error,
   online,
@@ -27,6 +30,7 @@ export function Sidebar({
   mcpError,
   onSelect,
   onNewChat,
+  onDelete,
 }: SidebarProps) {
   let body;
   if (loading) {
@@ -42,6 +46,12 @@ export function Sidebar({
         conversation={conversation}
         active={conversation.id === activeId}
         onSelect={onSelect}
+        onDelete={onDelete}
+        totalTokensOverride={
+          conversation.id === activeId
+            ? activeTotalTokens ?? undefined
+            : undefined
+        }
       />
     ));
   }
