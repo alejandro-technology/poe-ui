@@ -3,7 +3,7 @@ import type { MessageRole } from "../../core";
 import {
   CoreApiError,
   getConversation,
-  sendMessage as sendMessageToCore,
+  streamChatMessage,
 } from "../../core";
 
 export interface UiChatMessage {
@@ -11,7 +11,8 @@ export interface UiChatMessage {
   role: MessageRole;
   content: string;
   createdAt: string;
-  status: "sent" | "sending" | "error";
+  status: "sent" | "sending" | "streaming" | "error";
+  toolStatus?: string | null;
 }
 
 export interface UseChatResult {
@@ -101,38 +102,146 @@ export function useChat(): UseChatResult {
       setIsSending(true);
       setSendError(null);
 
-      try {
-        const result = await sendMessageToCore({
-          message: content,
-          conversationId: activeConversationId ?? undefined,
-        });
+      let assistantKey: string | null = null;
+      let metaReceived = false;
 
-        setMessages((prev) => {
-          const withSentUser = prev.map((message) =>
-            message.key === optimisticKey
-              ? { ...message, status: "sent" as const }
-              : message,
-          );
-          const reply: UiChatMessage = {
-            key: result.reply.id,
-            role: result.reply.role,
-            content: result.reply.content,
-            createdAt: result.reply.createdAt,
-            status: "sent",
-          };
-          return [...withSentUser, reply];
-        });
-
-        setActiveConversationId(result.conversationId);
-        setLastUpdateToken((token) => token + 1);
-      } catch (err) {
+      const markUserSent = (): void => {
         setMessages((prev) =>
           prev.map((message) =>
             message.key === optimisticKey
-              ? { ...message, status: "error" as const }
+              ? { ...message, status: "sent" as const }
               : message,
           ),
         );
+      };
+
+      const failAssistant = (): void => {
+        if (!assistantKey) return;
+        const key = assistantKey;
+        setMessages((prev) => {
+          const target = prev.find((message) => message.key === key);
+          if (!target) return prev;
+          if (target.content.length === 0) {
+            return prev.filter((message) => message.key !== key);
+          }
+          return prev.map((message) =>
+            message.key === key
+              ? { ...message, status: "error" as const }
+              : message,
+          );
+        });
+      };
+
+      try {
+        await streamChatMessage(
+          {
+            message: content,
+            conversationId: activeConversationId ?? undefined,
+          },
+          (event) => {
+            switch (event.type) {
+              case "meta": {
+                metaReceived = true;
+                markUserSent();
+                if (activeConversationId === null) {
+                  setActiveConversationId(event.conversationId);
+                }
+                const key = crypto.randomUUID();
+                assistantKey = key;
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    key,
+                    role: "assistant",
+                    content: "",
+                    createdAt: new Date().toISOString(),
+                    status: "streaming",
+                    toolStatus: null,
+                  },
+                ]);
+                break;
+              }
+              case "text": {
+                if (!assistantKey) break;
+                const key = assistantKey;
+                setMessages((prev) =>
+                  prev.map((message) =>
+                    message.key === key
+                      ? { ...message, content: message.content + event.delta }
+                      : message,
+                  ),
+                );
+                break;
+              }
+              case "tool_use": {
+                if (!assistantKey) break;
+                const key = assistantKey;
+                setMessages((prev) =>
+                  prev.map((message) =>
+                    message.key === key
+                      ? { ...message, toolStatus: event.name }
+                      : message,
+                  ),
+                );
+                break;
+              }
+              case "tool_result": {
+                if (!assistantKey) break;
+                const key = assistantKey;
+                setMessages((prev) =>
+                  prev.map((message) =>
+                    message.key === key
+                      ? { ...message, toolStatus: null }
+                      : message,
+                  ),
+                );
+                break;
+              }
+              case "done": {
+                if (!assistantKey) break;
+                const key = assistantKey;
+                setMessages((prev) =>
+                  prev.map((message) =>
+                    message.key === key
+                      ? { ...message, content: event.text }
+                      : message,
+                  ),
+                );
+                break;
+              }
+              case "reply_saved": {
+                if (!assistantKey) break;
+                const oldKey = assistantKey;
+                const newKey = event.replyId;
+                assistantKey = newKey;
+                setMessages((prev) =>
+                  prev.map((message) =>
+                    message.key === oldKey
+                      ? { ...message, key: newKey, status: "sent" as const }
+                      : message,
+                  ),
+                );
+                break;
+              }
+              case "error": {
+                failAssistant();
+                setSendError(`No se pudo enviar: ${event.message}`);
+                break;
+              }
+            }
+          },
+        );
+      } catch (err) {
+        failAssistant();
+        if (!metaReceived) {
+          setMessages((prev) =>
+            prev.map((message) =>
+              message.key === optimisticKey
+                ? { ...message, status: "error" as const }
+                : message,
+            ),
+          );
+        }
         const detail =
           err instanceof CoreApiError
             ? err.message
@@ -140,6 +249,9 @@ export function useChat(): UseChatResult {
         setSendError(`No se pudo enviar: ${detail}`);
       } finally {
         setIsSending(false);
+        if (metaReceived) {
+          setLastUpdateToken((token) => token + 1);
+        }
       }
     },
     [activeConversationId, isSending],

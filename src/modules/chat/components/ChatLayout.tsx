@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useChat } from "../hooks/useChat";
 import { useConversations } from "../hooks/useConversations";
 import { useCoreHealth } from "../hooks/useCoreHealth";
+import { useMcpServers } from "../hooks/useMcpServers";
 import { Composer } from "./Composer";
 import { MessageList } from "./MessageList";
 import { Sidebar } from "./Sidebar";
@@ -14,6 +15,11 @@ export function ChatLayout() {
     error: convError,
     refresh,
   } = useConversations();
+  const {
+    servers: mcpServers,
+    loading: mcpLoading,
+    error: mcpError,
+  } = useMcpServers();
   const {
     activeConversationId,
     messages,
@@ -38,6 +44,9 @@ export function ChatLayout() {
         loading={loading}
         error={convError}
         online={online}
+        mcpServers={mcpServers}
+        mcpLoading={mcpLoading}
+        mcpError={mcpError}
         onSelect={(id) => void selectConversation(id)}
         onNewChat={startNewConversation}
       />

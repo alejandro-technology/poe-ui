@@ -37,3 +37,19 @@ export interface CoreHealthDto {
   status: string;
   [key: string]: unknown;
 }
+
+export type ChatStreamEventDto =
+  | { type: "meta"; conversationId: string; model: string }
+  | { type: "text"; delta: string }
+  | { type: "tool_use"; name: string }
+  | { type: "tool_result"; name: string; isError: boolean }
+  | { type: "done"; text: string }
+  | { type: "reply_saved"; conversationId: string; replyId: string }
+  | { type: "error"; message: string };
+
+export interface McpServerStatusDto {
+  name: string;
+  url: string;
+  connected: boolean;
+  tools: string[];
+}

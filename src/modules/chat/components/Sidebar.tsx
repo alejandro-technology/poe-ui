@@ -1,6 +1,7 @@
-import type { ConversationDto } from "../../core";
+import type { ConversationDto, McpServerStatusDto } from "../../core";
 import { ConnectionBadge } from "./ConnectionBadge";
 import { ConversationItem } from "./ConversationItem";
+import { McpServers } from "./McpServers";
 
 export interface SidebarProps {
   conversations: ConversationDto[];
@@ -8,6 +9,9 @@ export interface SidebarProps {
   loading: boolean;
   error: string | null;
   online: boolean | null;
+  mcpServers: McpServerStatusDto[];
+  mcpLoading: boolean;
+  mcpError: string | null;
   onSelect: (id: string) => void;
   onNewChat: () => void;
 }
@@ -18,6 +22,9 @@ export function Sidebar({
   loading,
   error,
   online,
+  mcpServers,
+  mcpLoading,
+  mcpError,
   onSelect,
   onNewChat,
 }: SidebarProps) {
@@ -49,6 +56,11 @@ export function Sidebar({
         + Nueva conversación
       </button>
       <div className="conversation-list">{body}</div>
+      <McpServers
+        servers={mcpServers}
+        loading={mcpLoading}
+        error={mcpError}
+      />
     </aside>
   );
 }

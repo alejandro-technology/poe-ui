@@ -549,6 +549,107 @@ textarea:focus-visible {
 }
 
 /* ------------------------------------------------------------
+   Servidores MCP / streaming
+   ------------------------------------------------------------ */
+
+.mcp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 12px 16px 14px;
+  border-top: 1px solid var(--border);
+  background-color: var(--bg-panel);
+}
+
+.mcp-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.mcp-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-elevated);
+  transition: background-color var(--transition);
+}
+
+.mcp-item:hover {
+  background-color: var(--bg-surface);
+}
+
+.mcp-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.mcp-dot--connected {
+  background-color: var(--success);
+  box-shadow: 0 0 6px rgba(158, 206, 106, 0.5);
+}
+
+.mcp-dot--disconnected {
+  background-color: var(--error);
+}
+
+.mcp-item-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.mcp-item-detail {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.mcp-state {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.mcp-state--error {
+  color: var(--error);
+}
+
+.message-bubble-tool {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11.5px;
+  font-style: italic;
+  color: var(--accent);
+  animation: poe-pulse 1.6s ease-in-out infinite;
+}
+
+.message-bubble--streaming .message-bubble-content::after {
+  content: "▍";
+  margin-left: 2px;
+  color: var(--accent);
+  animation: poe-caret 1s steps(2, start) infinite;
+}
+
+@keyframes poe-caret {
+  to {
+    visibility: hidden;
+  }
+}
+
+/* ------------------------------------------------------------
    Animaciones
    ------------------------------------------------------------ */
 

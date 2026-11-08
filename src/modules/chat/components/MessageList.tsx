@@ -28,7 +28,11 @@ export function MessageList({ messages, isSending, messagesLoading }: MessageLis
   return (
     <div className="message-list" ref={listRef}>
       {body}
-      {isSending && <p className="composer-status">Poe está pensando…</p>}
+      {isSending &&
+        (messages.length === 0 ||
+          messages[messages.length - 1].role !== "assistant") && (
+          <p className="composer-status">Poe está pensando…</p>
+        )}
     </div>
   );
 }
