@@ -2,13 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
+import type { OrbEnergyState } from "../../fx";
+import { Orb } from "../../fx";
 
 export interface ComposerProps {
   disabled: boolean;
   onSend: (text: string) => Promise<void>;
+  orbState: OrbEnergyState;
 }
 
-export function Composer({ disabled, onSend }: ComposerProps) {
+export function Composer({ disabled, onSend, orbState }: ComposerProps) {
   const [text, setText] = useState<string>("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const canSend = !disabled && text.trim().length > 0;
@@ -32,7 +35,10 @@ export function Composer({ disabled, onSend }: ComposerProps) {
   }
 
   return (
-    <div className="glass-panel bg-card/30 relative flex shrink-0 items-end gap-3 border-t px-5 py-3.5">
+    <div className="glass-panel bg-card/30 relative flex shrink-0 items-center gap-3 border-t px-5 py-3.5">
+      <div className="flex h-14 w-14 shrink-0 items-center justify-center">
+        <Orb size={60} state={orbState} />
+      </div>
       <textarea
         ref={textareaRef}
         rows={2}
@@ -45,7 +51,7 @@ export function Composer({ disabled, onSend }: ComposerProps) {
       />
       <Button
         type="button"
-        className="h-10 px-4"
+        className="h-12 px-4 sheen"
         disabled={!canSend}
         onClick={() => void submit()}
       >

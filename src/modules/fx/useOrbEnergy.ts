@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export type OrbEnergyState = "idle" | "thinking" | "streaming" | "error";
+export type OrbEnergyState =
+  | "idle"
+  | "thinking"
+  | "tool"
+  | "streaming"
+  | "error";
 
 const TARGET_ENERGY: Record<OrbEnergyState, number> = {
   idle: 0.15,
   thinking: 0.5,
+  tool: 0.72,
   streaming: 0.9,
   error: 0.65,
 };

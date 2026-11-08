@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="brand" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7657F5" />
+      <stop offset="1" stop-color="#D94DEB" />
+    </linearGradient>
+    <radialGradient id="core" cx="0" cy="0" r="1" gradientTransform="matrix(29 31 -30 28 21 16)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#DCCBFF" stop-opacity=".8" />
+      <stop offset=".45" stop-color="#A780FF" stop-opacity=".18" />
+      <stop offset="1" stop-color="#A780FF" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="highlight" cx="0" cy="0" r="1" gradientTransform="matrix(11 0 0 9 43 44)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="white" stop-opacity=".34" />
+      <stop offset="1" stop-color="white" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <circle cx="32" cy="32" r="28" fill="url(#brand)" />
+  <circle cx="32" cy="32" r="28" fill="url(#core)" />
+  <ellipse cx="43" cy="44" fill="url(#highlight)" rx="11" ry="9" />
+  <circle cx="32" cy="32" r="29" stroke="white" stroke-opacity=".2" stroke-width="2" />
+</svg>

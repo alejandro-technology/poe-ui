@@ -1,16 +1,31 @@
 import { useEffect, useRef, useState } from "react";
 import type { TokenCountDto } from "../../core";
 import { countTextTokens, formatTokens } from "../../core";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { AnimatePresence, motion } from "motion/react";
 
 const COUNT_DEBOUNCE_MS = 500;
 
 export interface TokenMeterProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   text: string;
   onTextChange: (text: string) => void;
-  onClose: () => void;
 }
 
-export function TokenMeter({ text, onTextChange, onClose }: TokenMeterProps) {
+export function TokenMeter({
+  open,
+  onOpenChange,
+  text,
+  onTextChange,
+}: TokenMeterProps) {
   const [result, setResult] = useState<TokenCountDto | null>(null);
   const [counting, setCounting] = useState<boolean>(false);
   const [error, setError] = useState<boolean>(false);
@@ -18,6 +33,10 @@ export function TokenMeter({ text, onTextChange, onClose }: TokenMeterProps) {
   const firstRunRef = useRef<boolean>(true);
 
   // Conteo de tokens: debounced tras cada cambio; el primer conteo al abrir es inmediato.
+  useEffect(() => {
+    if (open) firstRunRef.current = true;
+  }, [open]);
+
   useEffect(() => {
     const requestId = ++requestIdRef.current;
     const delay = firstRunRef.current ? 0 : COUNT_DEBOUNCE_MS;
@@ -50,79 +69,70 @@ export function TokenMeter({ text, onTextChange, onClose }: TokenMeterProps) {
       // Invalida respuestas en vuelo si el texto cambia o el modal se cierra.
       requestIdRef.current += 1;
     };
-  }, [text]);
-
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent): void {
-      if (event.key === "Escape") onClose();
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  }, [text, open]);
 
   const characters = text.length;
 
-  let countBody;
-  if (error) {
-    countBody = null;
-  } else if (counting) {
-    countBody = <span className="meter-count meter-count--pending">midiendo…</span>;
-  } else if (result !== null) {
-    countBody = (
-      <span className="meter-count">
-        <span className="meter-count-value">≈ {formatTokens(result.tokens)}</span>
-        <span className="meter-count-unit">
-          {" "}tokens · {formatTokens(characters)} caracteres
-        </span>
-      </span>
-    );
-  }
-
   return (
-    <div
-      className="meter-overlay"
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <div
-        className="meter-panel"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="token-meter-title"
-      >
-        <div className="meter-header">
-          <span className="meter-title" id="token-meter-title">
-            Medidor de tokens
-          </span>
-          <button
-            type="button"
-            className="meter-close"
-            aria-label="Cerrar"
-            title="Cerrar"
-            onClick={onClose}
-          >
-            ✕
-          </button>
-        </div>
-        <textarea
-          className="meter-textarea"
-          value={text}
-          autoFocus
-          placeholder="Pegá un parrafo o escribí algo…"
-          onChange={(event) => onTextChange(event.currentTarget.value)}
-        />
-        {error && (
-          <div className="error-banner meter-error">
-            No se pudo medir los tokens. ¿Core está corriendo?
-          </div>
-        )}
-        {countBody}
-        <p className="meter-note">
-          Estimación aproximada con tokenizer offline; los tokens reales dependen
-          del modelo
-        </p>
-      </div>
-    </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md gap-0 border-0 bg-transparent p-0 shadow-none ring-0 sm:max-w-md">
+        <AnimatePresence initial={false}>
+          {open && (
+            <motion.div
+              key="token-meter-panel"
+              initial={{ opacity: 0, scale: 0.92, filter: "blur(6px)" }}
+              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ type: "spring", stiffness: 320, damping: 26 }}
+              className="glass flex w-full flex-col gap-3 rounded-xl p-5"
+            >
+              <DialogHeader>
+                <DialogTitle>Medidor de tokens</DialogTitle>
+                <DialogDescription>
+                  Pegá un texto para estimar cuántos tokens ocupa.
+                </DialogDescription>
+              </DialogHeader>
+              {error && (
+                <div className="rounded-md border-destructive/40 bg-destructive/10 border px-3 py-2 text-xs text-destructive">
+                  No se pudo medir los tokens. ¿Core está corriendo?
+                </div>
+              )}
+              <textarea
+                value={text}
+                placeholder="Escribí o pegá un párrafo…"
+                onChange={(event) => onTextChange(event.currentTarget.value)}
+                className="bg-background/60 focus-visible:border-ring focus-visible:ring-ring/50 min-h-36 w-full resize-y rounded-lg border border-input px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-3"
+              />
+              <div className="flex min-h-8 items-center justify-between gap-2">
+                {error ? (
+                  <span />
+                ) : counting ? (
+                  <span className="animate-pulse text-sm text-muted-foreground italic">
+                    midiendo…
+                  </span>
+                ) : result !== null ? (
+                  <span className="text-sm text-muted-foreground">
+                    <span className="text-primary text-2xl font-bold tabular-nums">
+                      ≈ {formatTokens(result.tokens)}
+                    </span>{" "}
+                    tokens · {formatTokens(characters)} caracteres
+                  </span>
+                ) : null}
+                <Badge
+                  variant="outline"
+                  className="text-[10px] text-muted-foreground"
+                >
+                  estimación offline
+                </Badge>
+              </div>
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                Estimación aproximada con tokenizer offline; los tokens reales
+                dependen del modelo
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { deleteConversation } from "../../core";
 import { useChat } from "../hooks/useChat";
 import { useConversations } from "../hooks/useConversations";
@@ -10,6 +10,8 @@ import { ErrorBanner } from "./ErrorBanner";
 import { MessageList } from "./MessageList";
 import { Sidebar } from "./Sidebar";
 import { Pencil } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { useOrbEnergy } from "../../fx";
 
 function describeError(err: unknown, fallback: string): string {
   if (err instanceof Error && err.message.length > 0) return err.message;
@@ -45,6 +47,21 @@ export function ChatLayout() {
     sendMessage,
     saveSystemPrompt,
   } = useChat();
+  const { state: orbState, setEnergy } = useOrbEnergy();
+  const lastMessage = messages[messages.length - 1];
+  const streamingLast = lastMessage?.status === "streaming";
+  const toolActive = streamingLast === true && lastMessage?.toolStatus != null;
+
+  const [toolGlow, setToolGlow] = useState<boolean>(false);
+  const toolDwellRef = useRef<number>(0);
+  useEffect(() => {
+    if (toolActive) {
+      window.clearTimeout(toolDwellRef.current);
+      setToolGlow(true);
+      return;
+    }
+    toolDwellRef.current = window.setTimeout(() => setToolGlow(false), 2000);
+  }, [toolActive]);
 
   const [actionError, setActionError] = useState<string | null>(null);
   const [promptPanelOpen, setPromptPanelOpen] = useState<boolean>(false);
@@ -56,6 +73,20 @@ export function ChatLayout() {
   useEffect(() => {
     if (lastUpdateToken > 0) void refresh();
   }, [lastUpdateToken, refresh]);
+
+  useEffect(() => {
+    if (sendError) {
+      setEnergy("error");
+    } else if (toolGlow) {
+      setEnergy("tool");
+    } else if (streamingLast) {
+      setEnergy("streaming");
+    } else if (isSending && lastMessage?.role !== "assistant") {
+      setEnergy("thinking");
+    } else {
+      setEnergy("idle");
+    }
+  }, [sendError, toolGlow, streamingLast, isSending, lastMessage?.role, setEnergy]);
 
   async function handleDelete(id: string): Promise<void> {
     setActionError(null);
@@ -121,7 +152,7 @@ export function ChatLayout() {
   const errorMessage = sendError ?? actionError;
 
   return (
-    <div className="relative z-10 flex h-full w-full overflow-hidden bg-background">
+    <div className="relative z-10 flex h-full w-full overflow-hidden">
       <Sidebar
         conversations={conversations}
         activeId={activeConversationId}
@@ -155,47 +186,55 @@ export function ChatLayout() {
             Instrucciones
           </Button>
         </div>
-        {promptPanelOpen && (
-          <div className="glass-panel bg-card/50 flex shrink-0 flex-col gap-2.5 border-b px-5 py-3.5">
-            <label
-              className="text-[11px] font-bold tracking-[0.08em] text-muted-foreground uppercase"
-              htmlFor="system-prompt-textarea"
+        <AnimatePresence initial={false}>
+          {promptPanelOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              className="glass-panel bg-card/50 flex shrink-0 flex-col gap-2.5 overflow-hidden border-b px-5 py-3.5"
             >
-              Instrucciones de sistema
-            </label>
-            <textarea
-              id="system-prompt-textarea"
-              rows={4}
-              value={promptDraft}
-              disabled={promptSaving}
-              placeholder="Definí cómo querés que Poe responda…"
-              onChange={(event) => setPromptDraft(event.currentTarget.value)}
-              className="bg-background focus-visible:border-ring focus-visible:ring-ring/50 w-full resize-y rounded-lg border border-input px-3 py-2.5 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-3 disabled:cursor-not-allowed disabled:opacity-50"
-            />
-            {promptError && (
-              <p className="text-xs text-destructive">{promptError}</p>
-            )}
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                size="sm"
-                disabled={promptSaveDisabled}
-                onClick={() => void savePrompt()}
+              <label
+                className="text-[11px] font-bold tracking-[0.08em] text-muted-foreground uppercase"
+                htmlFor="system-prompt-textarea"
               >
-                {promptSaving ? "Guardando…" : "Guardar"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
+                Instrucciones de sistema
+              </label>
+              <textarea
+                id="system-prompt-textarea"
+                rows={4}
+                value={promptDraft}
                 disabled={promptSaving}
-                onClick={cancelPromptPanel}
-              >
-                Cancelar
-              </Button>
-            </div>
-          </div>
-        )}
+                placeholder="Definí cómo querés que Poe responda…"
+                onChange={(event) => setPromptDraft(event.currentTarget.value)}
+                className="bg-background focus-visible:border-ring focus-visible:ring-ring/50 w-full resize-y rounded-lg border border-input px-3 py-2.5 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-3 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+              {promptError && (
+                <p className="text-xs text-destructive">{promptError}</p>
+              )}
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={promptSaveDisabled}
+                  onClick={() => void savePrompt()}
+                >
+                  {promptSaving ? "Guardando…" : "Guardar"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={promptSaving}
+                  onClick={cancelPromptPanel}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         {errorMessage && (
           <ErrorBanner message={errorMessage} className="mx-5 mt-3" />
         )}
@@ -207,6 +246,7 @@ export function ChatLayout() {
         <Composer
           disabled={isSending || online === false}
           onSend={sendMessage}
+          orbState={orbState}
         />
       </section>
     </div>

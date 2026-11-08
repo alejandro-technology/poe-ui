@@ -4,6 +4,32 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y ver
 
 ## [Unreleased]
 
+### 2026-11-08 — El orb reacciona al estado del agente + fix uniforms R3F
+
+#### Added
+
+- **Máquina de estados del orbe (`src/modules/fx/useOrbEnergy.ts`, `Orb.tsx`, `OrbCanvas.tsx`)** — OrbEnergyState = `idle | thinking | tool | streaming | error` con tarjeta aqua-hack; cada estado tiene energía objetivo, tintes y velocidad de giro propios (thinking vibra en magenta, tool dibuja una banda de escaneo aqua, streaming acelera, error tint rojo). El shader vertex/fragment reacciona a los uniforms `uEnergy`, `uThinking`, `uTool`, `uError`.
+- **Derivación del estado en el chat (`ChatLayout.tsx`)** — el estado se calcula del stream real: `thinking` mientras no llega el primer token, `streaming` con texto en vivo, `tool` en `tool_use/tool_result` con dwell de 2s (evita parpadeos por tools rápidos) y `error` en fallos; abajo, idle. El orbe del composer (Composer.tsx) se agranda a 60px y expone `data-orb-state` para pruebas.
+
+#### Fixed
+
+- **Orb congelado en el estado de montaje** — @react-three/fiber v9 CLONA el objeto `uniforms` en `<shaderMaterial uniforms={...}>` (applyProps), por lo que mutar un objeto memo en `useFrame` no afectaba al material; el orb sólo mostraba su look de montaje. Ahora `ShaderMaterial` se crea directamente en `useMemo` (el constructor conserva la referencia) y `useFrame` mantiene `material.uniforms`. Verificado por análisis de píxeles Playwright (banda aqua tool: 0 → ~3300 px) y E2E del composer con mock SSE determinista (`scripts/orb-state-mock-core.mjs`).
+
+### 2026-11-08 — Rediseño con Tailwind CSS v4 + shadcn/ui (tema "Aurora")
+
+#### Added
+
+- **Tailwind CSS v4 con plugin de Vite (`vite.config.ts`, `src/styles.css`, `package.json`)** — `tailwindcss` + `@tailwindcss/vite` reemplazan el CSS artesanal de ~1.000 líneas. `styles.css` ahora contiene los imports de Tailwind (`tailwindcss`, `tw-animate-css`, `shadcn/tailwind.css`), el mapeo de tokens `@theme inline`, la capa base y los extras (scrollbars, caret de streaming, keyframes).
+- **Instalación de shadcn/ui (estilo `base-nova` sobre Base UI)** — `components.json` + componentes generados vía CLI en `src/components/ui/`: `button`, `badge`, `textarea`, `switch` (Base UI) y `dialog` (portal con overlay, cierre por Escape/click fuera y botón X). Deps: `class-variance-authority`, `cn`, `lucide-react`, `tw-animate-css`, `shadcn`, `@base-ui/react`.
+- **Nuevo tema "Aurora" (`src/styles.css`, `index.html`)** — paleta dark-only en oklch con acento violeta (`--primary: oklch(0.63 0.216 292)`), superficies con tinte violeta profundo, verde `--success` para estados conectados y `color-scheme: dark` con `class="dark"` en `<html>` para habilitar las variantes `dark:` de los componentes.
+- **Alias `@/*` (`tsconfig.json`, `vite.config.ts`, `src/lib/utils.ts`)** — paths de TS resolviendo desde el config (TS 6 deprecó `baseUrl`) + alias en Vite con `fileURLToPath`. Helper `cn` reexportado desde `lib/utils.ts` para imports internos.
+
+#### Changed
+
+- **Rediseño completo de los componentes de chat con Tailwind + shadcn/ui** — `Button` (variantes outline/ghost/size xs-icon) para nueva conversación, enviar, guardar/cancelar e instrucciones con íconos `lucide-react` (`Plus`, `Send`, `Pencil`, `Gauge`, `Trash2`); `Badge` para el estado de conexión y el chip de tokens; `Switch` (Base UI) reemplaza el checkbox de MCP; `Dialog` reemplaza el modal handcrafted del medidor (se elimina el manejo manual de Escape/overlay); `Textarea` estilizada en composer/instrucciones.
+- **Nuevos componentes** — `ErrorBanner` compartido (banner destructive reutilizado por `Sidebar` y `ChatLayout`), dot de estado con glow, hover-reveal del botón eliminar (`group-hover/row`), item activo de conversación con `bg-sidebar-accent`.
+- Eliminado el CSS BEM del tema Tokyo Night; los estilos custom restantes son solo base globally (scrollbars, streaming caret, reduced-motion).
+
 ### 2026-11-08 — Switches MCP, tokens por server y medidor de tokens
 
 #### Added

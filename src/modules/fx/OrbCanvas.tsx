@@ -1,18 +1,29 @@
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useEffect, useMemo } from "react";
-import { IcosahedronGeometry } from "three";
+import { useEffect, useMemo, useRef } from "react";
+import { IcosahedronGeometry, ShaderMaterial, type Mesh } from "three";
 import type { OrbEnergyState } from "./useOrbEnergy";
 
 const ENERGY: Record<OrbEnergyState, number> = {
   idle: 0.15,
   thinking: 0.5,
+  tool: 0.72,
   streaming: 0.9,
   error: 0.65,
+};
+
+const SPIN: Record<OrbEnergyState, number> = {
+  idle: 0.05,
+  thinking: 0.12,
+  tool: 0.4,
+  streaming: 0.22,
+  error: 0.08,
 };
 
 const ORB_VERT = `
 uniform float uTime;
 uniform float uEnergy;
+uniform float uThinking;
+uniform float uTool;
 
 varying vec3 vNormal;
 varying vec3 vViewDir;
@@ -105,7 +116,12 @@ float fbm3(vec3 p) {
 }
 
 void main() {
-  float amp = 0.08 + uEnergy * 0.35;
+  float beat = 0.5 + 0.5 * sin(uTime * 3.4);
+  float amp =
+    0.08 +
+    uEnergy * 0.35 +
+    uThinking * 0.18 * beat * beat +
+    uTool * 0.1;
   vec3 flow = vec3(uTime * 0.31, uTime * 0.23, uTime * 0.17);
 
   float base = fbm3(position * 1.45 + flow);
@@ -115,7 +131,7 @@ void main() {
     snoise(position * 1.9 + flow.xyz)
   );
 
-  vec3 displaced = position + normal * base * amp + warp * amp * 0.12;
+  vec3 displaced = position + normal * base * amp + warp * amp * (0.12 + uTool * 0.2);
   vec4 mvPosition = modelViewMatrix * vec4(displaced, 1.0);
 
   vNormal = normalize(normalMatrix * normal);
@@ -130,6 +146,8 @@ precision highp float;
 uniform float uTime;
 uniform float uEnergy;
 uniform float uError;
+uniform float uThinking;
+uniform float uTool;
 
 varying vec3 vNormal;
 varying vec3 vViewDir;
@@ -152,6 +170,7 @@ void main() {
 
   vec3 rim = mix(VIOLET, FUCHSIA, e1);
   rim = mix(rim, mix(FUCHSIA, AQUA, 0.6), e2);
+  rim = mix(rim, AQUA, uTool * 0.4);
   vec3 coreColor = mix(VIOLET, FUCHSIA, e1);
 
   float pulse = 0.9 + 0.1 * sin(uTime * 2.1);
@@ -159,7 +178,27 @@ void main() {
   vec3 color = rim * fresnel * 1.35 * pulse;
   color += coreColor * core * (0.22 + uEnergy * 0.55);
 
-  float alpha = clamp(fresnel * 0.95 + core * 0.35 + uEnergy * 0.12, 0.0, 1.0);
+  // tool: banda de escaneo aqua recorriendo la cara visible de la esfera
+  float bandPos = 0.55 * sin(uTime * 1.9) * cos(uTime * 0.6);
+  float band = smoothstep(0.3, 0.02, abs(n.y - bandPos));
+
+  float alpha = clamp(
+    fresnel * 0.95 + core * 0.35 + uEnergy * 0.12 + band * uTool * 0.4,
+    0.0,
+    1.0
+  );
+
+  // thinking: ondas expansivas que viajan hacia el borde
+  float ringWave = 0.5 + 0.5 * sin((1.0 - ndv) * 9.0 - uTime * 3.4);
+  float rings = smoothstep(0.3, 1.0, ringWave);
+  color += rim * rings * fresnel * 1.15 * uThinking;
+
+  // tool: banda de trabajo aqua recorriendo la superficie
+  float bandFlicker = 0.75 + 0.45 * sin(uTime * 9.0);
+  color += AQUA * band * (0.75 + bandFlicker * 0.45) * uTool;
+
+  // thinking: latido sutil del nucleo
+  color += coreColor * (0.5 + 0.5 * sin(uTime * 3.2)) * core * 0.28 * uThinking;
 
   if (uError > 0.001) {
     float lum = dot(color, vec3(0.2126, 0.7152, 0.0722));
@@ -172,52 +211,67 @@ void main() {
 }
 `;
 
-interface OrbUniforms {
-  [key: string]: { value: number };
-  uTime: { value: number };
-  uEnergy: { value: number };
-  uError: { value: number };
-}
-
 function OrbMesh({ state }: { state: OrbEnergyState }) {
+  const meshRef = useRef<Mesh>(null);
+  const stateRef = useRef(state);
+  stateRef.current = state;
   const geometry = useMemo(() => new IcosahedronGeometry(1, 32), []);
-  const uniforms = useMemo<OrbUniforms>(
-    () => ({
-      uTime: { value: 0 },
-      uEnergy: { value: ENERGY[state] },
-      uError: { value: state === "error" ? 1 : 0 },
-    }),
+  const material = useMemo(
+    () =>
+      new ShaderMaterial({
+        vertexShader: ORB_VERT,
+        fragmentShader: ORB_FRAG,
+        uniforms: {
+          uTime: { value: 0 },
+          uEnergy: { value: ENERGY[state] },
+          uError: { value: state === "error" ? 1 : 0 },
+          uThinking: { value: state === "thinking" ? 1 : 0 },
+          uTool: { value: state === "tool" ? 1 : 0 },
+        },
+        transparent: true,
+        depthWrite: false,
+        toneMapped: false,
+      }),
     [],
   );
 
-  useEffect(() => () => geometry.dispose(), [geometry]);
+  useEffect(
+    () => () => {
+      geometry.dispose();
+      material.dispose();
+    },
+    [geometry, material],
+  );
 
   useFrame((_, delta) => {
+    const st = stateRef.current;
     const dt = Math.min(delta, 0.05);
-    const target = ENERGY[state];
+    const uniforms = material.uniforms;
+    const target = ENERGY[st];
     const current = uniforms.uEnergy.value;
     const eased = current + (target - current) * Math.min(1, dt * 5);
     uniforms.uEnergy.value = Math.abs(target - eased) < 0.001 ? target : eased;
 
-    const errorTarget = state === "error" ? 1 : 0;
+    const errorTarget = st === "error" ? 1 : 0;
     uniforms.uError.value +=
       (errorTarget - uniforms.uError.value) * Math.min(1, dt * 4);
 
-    uniforms.uTime.value += dt * (0.6 + uniforms.uEnergy.value * 2.2);
+    const thinkingTarget = st === "thinking" ? 1 : 0;
+    uniforms.uThinking.value +=
+      (thinkingTarget - uniforms.uThinking.value) * Math.min(1, dt * 5);
+
+    const toolTarget = st === "tool" ? 1 : 0;
+    uniforms.uTool.value += (toolTarget - uniforms.uTool.value) * Math.min(1, dt * 6);
+
+    uniforms.uTime.value +=
+      dt * (0.6 + uniforms.uEnergy.value * 2.2 + uniforms.uTool.value * 0.7);
+
+    if (meshRef.current) {
+      meshRef.current.rotation.y += dt * SPIN[st];
+    }
   });
 
-  return (
-    <mesh geometry={geometry}>
-      <shaderMaterial
-        vertexShader={ORB_VERT}
-        fragmentShader={ORB_FRAG}
-        uniforms={uniforms}
-        transparent
-        depthWrite={false}
-        toneMapped={false}
-      />
-    </mesh>
-  );
+  return <mesh ref={meshRef} geometry={geometry} material={material} />;
 }
 
 export default function OrbCanvas({ state }: { state: OrbEnergyState }) {

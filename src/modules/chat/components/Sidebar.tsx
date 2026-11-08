@@ -5,6 +5,7 @@ import { ErrorBanner } from "./ErrorBanner";
 import { McpServers } from "./McpServers";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { AnimatePresence, LayoutGroup } from "motion/react";
 
 export interface SidebarProps {
   conversations: ConversationDto[];
@@ -39,42 +40,15 @@ export function Sidebar({
   onNewChat,
   onDelete,
 }: SidebarProps) {
-  let body;
-  if (loading) {
-    body = (
-      <p className="animate-pulse px-4 py-6 text-center text-sm text-muted-foreground">
-        Cargando…
-      </p>
-    );
-  } else if (error) {
-    body = <ErrorBanner message={error} className="mx-2 mt-2" />;
-  } else if (conversations.length === 0) {
-    body = (
-      <p className="px-4 py-6 text-center text-sm text-muted-foreground">
-        Sin conversaciones todavía
-      </p>
-    );
-  } else {
-    body = conversations.map((conversation) => (
-      <ConversationItem
-        key={conversation.id}
-        conversation={conversation}
-        active={conversation.id === activeId}
-        onSelect={onSelect}
-        onDelete={onDelete}
-        totalTokensOverride={
-          conversation.id === activeId
-            ? activeTotalTokens ?? undefined
-            : undefined
-        }
-      />
-    ));
-  }
-
   return (
     <aside className="glass-panel relative flex w-72 shrink-0 flex-col overflow-hidden border-sidebar-border border-r">
       <div className="flex items-center justify-between gap-2 px-4 pt-4 pb-2">
-        <h1 className="text-base font-bold tracking-wide">Poe</h1>
+        <h1 className="font-display text-base font-medium tracking-[0.02em]">
+          <span>poe</span>
+          <span aria-hidden="true" className="text-primary">
+            °
+          </span>
+        </h1>
         <ConnectionBadge online={online} />
       </div>
       <Button
@@ -87,7 +61,43 @@ export function Sidebar({
         Nueva conversación
       </Button>
       <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overflow-x-hidden px-2 pb-3">
-        {body}
+        <LayoutGroup id="sidebar-conversations">
+          <AnimatePresence initial={false}>
+            {loading ? (
+              <p
+                key="loading"
+                className="animate-pulse px-4 py-6 text-center text-sm text-muted-foreground"
+              >
+                Cargando…
+              </p>
+            ) : error ? (
+              <ErrorBanner key="error" message={error} className="mx-2 mt-2" />
+            ) : conversations.length === 0 ? (
+              <p
+                key="empty"
+                className="px-4 py-6 text-center text-sm text-muted-foreground"
+              >
+                Sin conversaciones todavía
+              </p>
+            ) : (
+              conversations.map((conversation, index) => (
+                <ConversationItem
+                  key={conversation.id}
+                  conversation={conversation}
+                  active={conversation.id === activeId}
+                  onSelect={onSelect}
+                  onDelete={onDelete}
+                  animationIndex={index}
+                  totalTokensOverride={
+                    conversation.id === activeId
+                      ? activeTotalTokens ?? undefined
+                      : undefined
+                  }
+                />
+              ))
+            )}
+          </AnimatePresence>
+        </LayoutGroup>
       </div>
       <McpServers
         servers={mcpServers}

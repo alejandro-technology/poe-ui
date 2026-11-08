@@ -236,6 +236,89 @@
     font-family: var(--font-display);
     letter-spacing: 0.02em;
   }
+
+  /* Escena de refracción del hero vacío */
+  .hero-ring {
+    position: absolute;
+    inset: -12px;
+    border-radius: 9999px;
+    pointer-events: none;
+    background: conic-gradient(
+      from 0deg,
+      var(--glow-1),
+      var(--glow-2),
+      var(--glow-3),
+      var(--glow-1)
+    );
+    -webkit-mask: radial-gradient(
+      farthest-side,
+      transparent calc(100% - 2.5px),
+      black calc(100% - 2px)
+    );
+    mask: radial-gradient(
+      farthest-side,
+      transparent calc(100% - 2.5px),
+      black calc(100% - 2px)
+    );
+    filter: blur(0.4px);
+    opacity: 0.35;
+    will-change: transform;
+  }
+
+  .hero-ring--spin {
+    animation: hero-ring-spin 14s linear infinite;
+  }
+
+  .fx-orbits {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .fx-orbit {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    animation: hero-orbit linear infinite;
+  }
+
+  .fx-orbit > span {
+    position: absolute;
+    top: -2px;
+    left: calc(50% - 2px);
+    width: 4px;
+    height: 4px;
+    border-radius: 9999px;
+    opacity: 0.5;
+  }
+
+  .fx-orbits > .fx-orbit:nth-child(1) {
+    animation-duration: 9s;
+    animation-delay: -2s;
+  }
+
+  .fx-orbits > .fx-orbit:nth-child(2) {
+    animation-duration: 13s;
+    animation-delay: -6s;
+    animation-direction: reverse;
+  }
+
+  .fx-orbits > .fx-orbit:nth-child(3) {
+    animation-duration: 17s;
+    animation-delay: -11s;
+  }
+}
+
+@keyframes hero-ring-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes hero-orbit {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes poe-sheen {

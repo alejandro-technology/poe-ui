@@ -16,6 +16,7 @@ export function Orb({ size = 96, state = "idle", className }: OrbProps) {
     <div
       className={classes}
       style={{ width: size, height: size }}
+      data-orb-state={state}
       aria-hidden="true"
     >
       <Suspense fallback={<div className="fx-orb-fallback" />}>

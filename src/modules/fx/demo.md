@@ -61,14 +61,16 @@ const streamingLast = lastMessage?.status === "streaming";
 useEffect(() => {
   if (sendError) {
     setEnergy("error");
-  } else if (isSending && messages.length === 0) {
-    setEnergy("thinking");
+  } else if (toolGlow) {
+    setEnergy("tool");
   } else if (streamingLast) {
     setEnergy("streaming");
+  } else if (isSending && lastMessage?.role !== "assistant") {
+    setEnergy("thinking");
   } else {
     setEnergy("idle");
   }
-}, [sendError, isSending, messages.length, streamingLast, setEnergy]);
+}, [sendError, toolGlow, streamingLast, isSending, lastMessage?.role, setEnergy]);
 ```
 
 Rule summary:
@@ -76,9 +78,13 @@ Rule summary:
 | condition                         | state       |
 | --------------------------------- | ----------- |
 | `sendError` truthy                | `"error"`   |
-| `isSending && messages.length===0`| `"thinking"`|
+| streaming last + `toolStatus != null` (+ dwell 2s) | `"tool"` |
 | last message `status==="streaming"` | `"streaming"` |
+| `isSending` and last message is not from the assistant | `"thinking"` |
 | otherwise                         | `"idle"`    |
+
+`toolGlow` keeps `"tool"` visible a minimum of 2s from `tool_result` (dwell) so
+fast tools do not flash blindly; `<Orb />` exposes `data-orb-state` for tests.
 
 `useOrbEnergy` exposes `intensity` (0..1) already tweened with rAF if a CSS
 consumer needs it; `<Orb/>` tweens its own `uEnergy` from `state`.
