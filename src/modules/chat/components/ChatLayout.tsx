@@ -4,9 +4,12 @@ import { useChat } from "../hooks/useChat";
 import { useConversations } from "../hooks/useConversations";
 import { useCoreHealth } from "../hooks/useCoreHealth";
 import { useMcpServers } from "../hooks/useMcpServers";
+import { Button } from "@/components/ui/button";
 import { Composer } from "./Composer";
+import { ErrorBanner } from "./ErrorBanner";
 import { MessageList } from "./MessageList";
 import { Sidebar } from "./Sidebar";
+import { Pencil } from "lucide-react";
 
 function describeError(err: unknown, fallback: string): string {
   if (err instanceof Error && err.message.length > 0) return err.message;
@@ -118,7 +121,7 @@ export function ChatLayout() {
   const errorMessage = sendError ?? actionError;
 
   return (
-    <div className="chat-layout">
+    <div className="relative z-10 flex h-full w-full overflow-hidden bg-background">
       <Sidebar
         conversations={conversations}
         activeId={activeConversationId}
@@ -135,59 +138,67 @@ export function ChatLayout() {
         onNewChat={handleNewChat}
         onDelete={(id) => void handleDelete(id)}
       />
-      <section className="chat-panel">
-        <div className="chat-panel-topbar">
-          <span className="chat-panel-title">
+      <section className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="glass-panel bg-card/50 flex shrink-0 items-center gap-3 border-b px-5 py-3">
+          <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">
             {activeConversationId ? "Conversación" : "Nueva conversación"}
-          </span>
-          <button
+          </h2>
+          <Button
             type="button"
-            className="system-prompt-button"
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-primary"
             title="Instrucciones de sistema"
             onClick={openPromptPanel}
           >
-            <span aria-hidden="true">✎</span> Instrucciones
-          </button>
+            <Pencil data-icon="inline-start" />
+            Instrucciones
+          </Button>
         </div>
         {promptPanelOpen && (
-          <div className="system-prompt-panel">
+          <div className="glass-panel bg-card/50 flex shrink-0 flex-col gap-2.5 border-b px-5 py-3.5">
             <label
-              className="system-prompt-label"
+              className="text-[11px] font-bold tracking-[0.08em] text-muted-foreground uppercase"
               htmlFor="system-prompt-textarea"
             >
               Instrucciones de sistema
             </label>
             <textarea
               id="system-prompt-textarea"
-              className="system-prompt-textarea"
               rows={4}
               value={promptDraft}
               disabled={promptSaving}
               placeholder="Definí cómo querés que Poe responda…"
               onChange={(event) => setPromptDraft(event.currentTarget.value)}
+              className="bg-background focus-visible:border-ring focus-visible:ring-ring/50 w-full resize-y rounded-lg border border-input px-3 py-2.5 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-3 disabled:cursor-not-allowed disabled:opacity-50"
             />
-            {promptError && <p className="system-prompt-error">{promptError}</p>}
-            <div className="system-prompt-actions">
-              <button
+            {promptError && (
+              <p className="text-xs text-destructive">{promptError}</p>
+            )}
+            <div className="flex items-center gap-2">
+              <Button
                 type="button"
-                className="system-prompt-save"
+                size="sm"
                 disabled={promptSaveDisabled}
                 onClick={() => void savePrompt()}
               >
                 {promptSaving ? "Guardando…" : "Guardar"}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="system-prompt-cancel"
+                variant="outline"
+                size="sm"
                 disabled={promptSaving}
                 onClick={cancelPromptPanel}
               >
                 Cancelar
-              </button>
+              </Button>
             </div>
           </div>
         )}
-        {errorMessage && <div className="error-banner">{errorMessage}</div>}
+        {errorMessage && (
+          <ErrorBanner message={errorMessage} className="mx-5 mt-3" />
+        )}
         <MessageList
           messages={messages}
           isSending={isSending}

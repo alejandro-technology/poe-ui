@@ -1,7 +1,10 @@
 import type { ConversationDto, McpServerStatusDto } from "../../core";
 import { ConnectionBadge } from "./ConnectionBadge";
 import { ConversationItem } from "./ConversationItem";
+import { ErrorBanner } from "./ErrorBanner";
 import { McpServers } from "./McpServers";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 export interface SidebarProps {
   conversations: ConversationDto[];
@@ -38,11 +41,19 @@ export function Sidebar({
 }: SidebarProps) {
   let body;
   if (loading) {
-    body = <p className="loading-state">Cargando…</p>;
+    body = (
+      <p className="animate-pulse px-4 py-6 text-center text-sm text-muted-foreground">
+        Cargando…
+      </p>
+    );
   } else if (error) {
-    body = <p className="error-banner">{error}</p>;
+    body = <ErrorBanner message={error} className="mx-2 mt-2" />;
   } else if (conversations.length === 0) {
-    body = <p className="empty-state">Sin conversaciones todavía</p>;
+    body = (
+      <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+        Sin conversaciones todavía
+      </p>
+    );
   } else {
     body = conversations.map((conversation) => (
       <ConversationItem
@@ -61,15 +72,23 @@ export function Sidebar({
   }
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-header">
-        <span className="sidebar-title">Poe</span>
+    <aside className="glass-panel relative flex w-72 shrink-0 flex-col overflow-hidden border-sidebar-border border-r">
+      <div className="flex items-center justify-between gap-2 px-4 pt-4 pb-2">
+        <h1 className="text-base font-bold tracking-wide">Poe</h1>
         <ConnectionBadge online={online} />
       </div>
-      <button type="button" className="new-chat-button" onClick={onNewChat}>
-        + Nueva conversación
-      </button>
-      <div className="conversation-list">{body}</div>
+      <Button
+        type="button"
+        variant="outline"
+        className="mx-3 mb-3 h-9 justify-start dark:border-input"
+        onClick={onNewChat}
+      >
+        <Plus data-icon="inline-start" />
+        Nueva conversación
+      </Button>
+      <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overflow-x-hidden px-2 pb-3">
+        {body}
+      </div>
       <McpServers
         servers={mcpServers}
         loading={mcpLoading}

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
+import { Button } from "@/components/ui/button";
+import { Send } from "lucide-react";
 
 export interface ComposerProps {
   disabled: boolean;
@@ -30,25 +32,26 @@ export function Composer({ disabled, onSend }: ComposerProps) {
   }
 
   return (
-    <div className="composer">
+    <div className="glass-panel bg-card/30 relative flex shrink-0 items-end gap-3 border-t px-5 py-3.5">
       <textarea
         ref={textareaRef}
-        className="composer-textarea"
         rows={2}
         placeholder="Escribí un mensaje para Poe…"
         value={text}
         disabled={disabled}
         onChange={(event) => setText(event.currentTarget.value)}
         onKeyDown={handleKeyDown}
+        className="bg-background focus-visible:border-ring focus-visible:ring-ring/50 flex-1 resize-none rounded-lg border border-input px-3 py-2.5 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-3 disabled:cursor-not-allowed disabled:opacity-50"
       />
-      <button
+      <Button
         type="button"
-        className="composer-send-button"
+        className="h-10 px-4"
         disabled={!canSend}
         onClick={() => void submit()}
       >
         Enviar
-      </button>
+        <Send data-icon="inline-end" />
+      </Button>
     </div>
   );
 }
