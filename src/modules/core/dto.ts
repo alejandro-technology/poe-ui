@@ -1,10 +1,21 @@
 export type MessageRole = "user" | "assistant";
 
+export interface ChatToolCallDto {
+  id: string;
+  name: string;
+  input: Record<string, unknown> | null;
+  isError: boolean;
+  durationMs: number;
+  resultTokens: number;
+  resultPreview: string;
+}
+
 export interface ChatMessageDto {
   id: string;
   conversationId: string;
   role: MessageRole;
   content: string;
+  toolCalls: ChatToolCallDto[];
   createdAt: string;
 }
 
@@ -43,8 +54,21 @@ export interface CoreHealthDto {
 export type ChatStreamEventDto =
   | { type: "meta"; conversationId: string; model: string }
   | { type: "text"; delta: string }
-  | { type: "tool_use"; name: string }
-  | { type: "tool_result"; name: string; isError: boolean }
+  | {
+      type: "tool_use";
+      id: string;
+      name: string;
+      input: Record<string, unknown> | null;
+    }
+  | {
+      type: "tool_result";
+      id: string;
+      name: string;
+      isError: boolean;
+      durationMs: number;
+      resultTokens: number;
+      resultPreview: string;
+    }
   | { type: "done"; text: string }
   | {
       type: "usage";

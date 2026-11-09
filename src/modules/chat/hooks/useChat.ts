@@ -7,13 +7,23 @@ import {
   updateConversation,
 } from "../../core";
 
+export interface UiToolCall {
+  id: string;
+  name: string;
+  input: Record<string, unknown> | null;
+  status: "running" | "ok" | "error";
+  durationMs: number | null;
+  resultTokens: number | null;
+  resultPreview: string | null;
+}
+
 export interface UiChatMessage {
   key: string;
   role: MessageRole;
   content: string;
   createdAt: string;
   status: "sent" | "sending" | "streaming" | "error";
-  toolStatus?: string | null;
+  toolCalls: UiToolCall[];
 }
 
 export interface UseChatResult {
@@ -77,6 +87,15 @@ export function useChat(): UseChatResult {
             content: message.content,
             createdAt: message.createdAt,
             status: "sent",
+            toolCalls: message.toolCalls.map((call) => ({
+              id: call.id,
+              name: call.name,
+              input: call.input,
+              status: call.isError ? ("error" as const) : ("ok" as const),
+              durationMs: call.durationMs,
+              resultTokens: call.resultTokens,
+              resultPreview: call.resultPreview,
+            })),
           })),
         );
       } catch (err) {
@@ -132,6 +151,7 @@ export function useChat(): UseChatResult {
         content,
         createdAt: new Date().toISOString(),
         status: "sending",
+        toolCalls: [],
       };
 
       setMessages((prev) => [...prev, optimisticMessage]);
@@ -200,7 +220,7 @@ export function useChat(): UseChatResult {
                     content: "",
                     createdAt: new Date().toISOString(),
                     status: "streaming",
-                    toolStatus: null,
+                    toolCalls: [],
                   },
                 ]);
                 break;
@@ -220,10 +240,22 @@ export function useChat(): UseChatResult {
               case "tool_use": {
                 if (!assistantKey) break;
                 const key = assistantKey;
+                const toolCall: UiToolCall = {
+                  id: event.id,
+                  name: event.name,
+                  input: event.input,
+                  status: "running",
+                  durationMs: null,
+                  resultTokens: null,
+                  resultPreview: null,
+                };
                 setMessages((prev) =>
                   prev.map((message) =>
                     message.key === key
-                      ? { ...message, toolStatus: event.name }
+                      ? {
+                          ...message,
+                          toolCalls: [...message.toolCalls, toolCall],
+                        }
                       : message,
                   ),
                 );
@@ -235,7 +267,22 @@ export function useChat(): UseChatResult {
                 setMessages((prev) =>
                   prev.map((message) =>
                     message.key === key
-                      ? { ...message, toolStatus: null }
+                      ? {
+                          ...message,
+                          toolCalls: message.toolCalls.map((toolCall) =>
+                            toolCall.id === event.id
+                              ? {
+                                  ...toolCall,
+                                  status: event.isError
+                                    ? ("error" as const)
+                                    : ("ok" as const),
+                                  durationMs: event.durationMs,
+                                  resultTokens: event.resultTokens,
+                                  resultPreview: event.resultPreview,
+                                }
+                              : toolCall,
+                          ),
+                        }
                       : message,
                   ),
                 );

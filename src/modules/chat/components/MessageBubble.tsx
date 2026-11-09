@@ -1,5 +1,6 @@
 import { forwardRef } from "react";
 import type { UiChatMessage } from "../hooks/useChat";
+import { ToolCallList } from "./ToolCallList";
 import { cn } from "cn";
 import { motion, useReducedMotion } from "motion/react";
 
@@ -54,11 +55,7 @@ export const MessageBubble = forwardRef<HTMLDivElement, MessageBubbleProps>(
               "border-destructive/50 bg-destructive/10 text-destructive",
           )}
         >
-          {message.toolStatus && (
-            <span className="animate-pulse mb-1.5 block text-xs italic text-primary">
-              Ejecutando {message.toolStatus}…
-            </span>
-          )}
+          <ToolCallList calls={message.toolCalls} />
           <div
             className={cn(
               "wrap-anywhere whitespace-pre-wrap",

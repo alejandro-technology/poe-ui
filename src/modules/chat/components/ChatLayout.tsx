@@ -50,7 +50,9 @@ export function ChatLayout() {
   const { state: orbState, setEnergy } = useOrbEnergy();
   const lastMessage = messages[messages.length - 1];
   const streamingLast = lastMessage?.status === "streaming";
-  const toolActive = streamingLast === true && lastMessage?.toolStatus != null;
+  const toolActive =
+    streamingLast === true &&
+    (lastMessage?.toolCalls.some((call) => call.status === "running") ?? false);
 
   const [toolGlow, setToolGlow] = useState<boolean>(false);
   const toolDwellRef = useRef<number>(0);
