@@ -4,6 +4,8 @@ import { useChat } from "../hooks/useChat";
 import { useConversations } from "../hooks/useConversations";
 import { useCoreHealth } from "../hooks/useCoreHealth";
 import { useMcpServers } from "../hooks/useMcpServers";
+import { useVoiceLive } from "../../voice/useVoiceLive";
+import { VoiceOverlay } from "../../voice/VoiceOverlay";
 import { Button } from "@/components/ui/button";
 import { Composer } from "./Composer";
 import { ErrorBanner } from "./ErrorBanner";
@@ -19,7 +21,7 @@ function describeError(err: unknown, fallback: string): string {
 }
 
 export function ChatLayout() {
-  const { online } = useCoreHealth();
+  const { online, voiceAvailable } = useCoreHealth();
   const {
     conversations,
     loading,
@@ -71,6 +73,11 @@ export function ChatLayout() {
   const [promptOriginal, setPromptOriginal] = useState<string>("");
   const [promptSaving, setPromptSaving] = useState<boolean>(false);
   const [promptError, setPromptError] = useState<string | null>(null);
+
+  const voice = useVoiceLive({
+    refresh,
+    selectConversation,
+  });
 
   useEffect(() => {
     if (lastUpdateToken > 0) void refresh();
@@ -249,8 +256,26 @@ export function ChatLayout() {
           disabled={isSending || online === false}
           onSend={sendMessage}
           orbState={orbState}
+          onVoiceClick={() => void voice.open()}
+          voiceEnabled={online === true && voiceAvailable}
         />
       </section>
+      <AnimatePresence>
+        {voice.active && (
+          <VoiceOverlay
+            key="voice-overlay"
+            state={voice.state}
+            reconnecting={voice.reconnecting}
+            inputTranscript={voice.inputTranscript}
+            outputTranscript={voice.outputTranscript}
+            error={voice.error}
+            muted={voice.muted}
+            onToggleMute={voice.toggleMute}
+            onClose={() => void voice.close()}
+            onRetry={() => void voice.retry()}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

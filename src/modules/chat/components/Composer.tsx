@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { Send } from "lucide-react";
+import { Mic, Send } from "lucide-react";
 import type { OrbEnergyState } from "../../fx";
 import { Orb } from "../../fx";
 
@@ -9,9 +9,17 @@ export interface ComposerProps {
   disabled: boolean;
   onSend: (text: string) => Promise<void>;
   orbState: OrbEnergyState;
+  onVoiceClick?: () => void;
+  voiceEnabled?: boolean;
 }
 
-export function Composer({ disabled, onSend, orbState }: ComposerProps) {
+export function Composer({
+  disabled,
+  onSend,
+  orbState,
+  onVoiceClick,
+  voiceEnabled,
+}: ComposerProps) {
   const [text, setText] = useState<string>("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const canSend = !disabled && text.trim().length > 0;
@@ -49,6 +57,18 @@ export function Composer({ disabled, onSend, orbState }: ComposerProps) {
         onKeyDown={handleKeyDown}
         className="bg-background focus-visible:border-ring focus-visible:ring-ring/50 flex-1 resize-none rounded-lg border border-input px-3 py-2.5 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-3 disabled:cursor-not-allowed disabled:opacity-50"
       />
+      {onVoiceClick && (
+        <Button
+          type="button"
+          variant="outline"
+          className="h-12 px-3"
+          disabled={!voiceEnabled}
+          onClick={onVoiceClick}
+          aria-label="Modo voz"
+        >
+          <Mic />
+        </Button>
+      )}
       <Button
         type="button"
         className="h-12 px-4 sheen"

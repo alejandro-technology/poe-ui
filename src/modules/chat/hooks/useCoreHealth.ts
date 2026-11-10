@@ -4,19 +4,25 @@ import { CoreApiError, getHealth } from "../../core";
 export interface CoreHealthState {
   online: boolean | null;
   checking: boolean;
+  voiceAvailable: boolean;
 }
 
 export function useCoreHealth(): CoreHealthState {
   const [online, setOnline] = useState<boolean | null>(null);
   const [checking, setChecking] = useState<boolean>(true);
+  const [voiceAvailable, setVoiceAvailable] = useState<boolean>(false);
   const mountedRef = useRef<boolean>(true);
 
   const check = useCallback(async (): Promise<void> => {
     if (!mountedRef.current) return;
     setChecking(true);
     try {
-      await getHealth();
-      if (mountedRef.current) setOnline(true);
+      const health = await getHealth();
+      if (mountedRef.current) {
+        setOnline(true);
+        const voice = (health as { voice?: { available?: unknown } }).voice;
+        setVoiceAvailable(voice?.available === true);
+      }
     } catch (err) {
       if (!mountedRef.current) return;
       if (err instanceof CoreApiError) {
@@ -24,6 +30,7 @@ export function useCoreHealth(): CoreHealthState {
       } else {
         setOnline(false);
       }
+      setVoiceAvailable(false);
     } finally {
       if (mountedRef.current) setChecking(false);
     }
@@ -41,5 +48,5 @@ export function useCoreHealth(): CoreHealthState {
     };
   }, [check]);
 
-  return { online, checking };
+  return { online, checking, voiceAvailable };
 }
