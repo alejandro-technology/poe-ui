@@ -134,7 +134,11 @@
   }
 
   body {
-    @apply bg-background text-foreground overflow-hidden overscroll-none;
+    @apply bg-background text-foreground overflow-hidden overscroll-none rounded-[10px];
+  }
+
+  body.voice-live {
+    background: transparent;
   }
 
   #root {

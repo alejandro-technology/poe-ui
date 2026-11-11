@@ -66,7 +66,8 @@ export function VoiceOverlay({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-b from-black/85 via-violet-950/80 to-black/90 backdrop-blur-md"
+      data-tauri-drag-region
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center rounded-[10px] bg-background/40"
     >
       <div className="absolute top-4 right-4 flex items-center gap-2">
         <Button
