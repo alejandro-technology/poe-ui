@@ -1,4 +1,6 @@
 // @ts-nocheck
+const PLAYBACK_SECONDS = 20;
+
 class PlaybackProcessor extends AudioWorkletProcessor {
   private buffer: Float32Array;
   private capacity: number;
@@ -8,7 +10,7 @@ class PlaybackProcessor extends AudioWorkletProcessor {
 
   constructor() {
     super();
-    this.capacity = 24000 * 5;
+    this.capacity = Math.round(sampleRate * PLAYBACK_SECONDS);
     this.buffer = new Float32Array(this.capacity);
     this.writeIndex = 0;
     this.readIndex = 0;
@@ -25,15 +27,27 @@ class PlaybackProcessor extends AudioWorkletProcessor {
       }
       if (data.type === "pcm" && data.buffer) {
         const int16 = new Int16Array(data.buffer);
-        for (let i = 0; i < int16.length; i++) {
-          if (this.count >= this.capacity) break;
-          const v = int16[i] / (int16[i] < 0 ? 0x8000 : 0x7fff);
-          this.buffer[this.writeIndex] = v;
-          this.writeIndex = (this.writeIndex + 1) % this.capacity;
-          this.count++;
-        }
+        this.writePcm(int16);
       }
     };
+  }
+
+  private writePcm(int16: Int16Array): void {
+    let chunk = int16;
+    if (chunk.length > this.capacity) {
+      chunk = chunk.subarray(chunk.length - this.capacity);
+    }
+    const overflow = this.count + chunk.length - this.capacity;
+    if (overflow > 0) {
+      this.readIndex = (this.readIndex + overflow) % this.capacity;
+      this.count -= overflow;
+    }
+    for (let i = 0; i < chunk.length; i++) {
+      const sample = chunk[i];
+      this.buffer[this.writeIndex] = sample / (sample < 0 ? 0x8000 : 0x7fff);
+      this.writeIndex = (this.writeIndex + 1) % this.capacity;
+      this.count++;
+    }
   }
 
   process(_inputs: Float32Array[][], outputs: Float32Array[][]): boolean {
