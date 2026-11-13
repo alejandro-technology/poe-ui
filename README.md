@@ -2,6 +2,18 @@
 
 Cliente de escritorio de **Poe** — Tauri 2 + React 19 — que consume la API local de [`poe-core`](../poe-core) (instalado y corriendo por separado). Sin librerías de UI, sin router y sin gestor de estado: fetch directo a `localhost:3001`.
 
+## Vista previa
+
+**Preview en acción** — carga del hero con orb WebGL, cambio de conversaciones, tool calls y composer (~17 s):
+
+<video src="docs/preview.mp4" controls muted></video>
+
+| Chat con tool calls | Hero (orb WebGL) | Modo voz (Poe Live) |
+| :---: | :---: | :---: |
+| ![Chat con tool calls](docs/screenshot-chat.png) | ![Hero con orb WebGL](docs/screenshot-hero.png) | ![Modo voz con orb](docs/screenshot-voz.png) |
+
+> Video: `docs/preview.mp4` · Screenshots: [`docs/`](docs/)
+
 ## Requisitos
 
 - pnpm
