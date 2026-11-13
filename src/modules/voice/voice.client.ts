@@ -4,6 +4,8 @@ export interface VoiceClientHandlers {
   onSession: (conversationId: string, model: string) => void;
   onInputTranscript: (text: string) => void;
   onOutputTranscript: (text: string) => void;
+  onToolStart: (name: string) => void;
+  onToolResult: (name: string) => void;
   onInterrupted: () => void;
   onTurnComplete: () => void;
   onGoAway: (timeLeft?: number) => void;
@@ -123,6 +125,16 @@ export class VoiceClient {
         case "output-transcript": {
           const p = parsed as { text?: unknown };
           if (typeof p.text === "string") this.handlers.onOutputTranscript(p.text);
+          break;
+        }
+        case "tool-start": {
+          const p = parsed as { name?: unknown };
+          if (typeof p.name === "string") this.handlers.onToolStart(p.name);
+          break;
+        }
+        case "tool-result": {
+          const p = parsed as { name?: unknown };
+          if (typeof p.name === "string") this.handlers.onToolResult(p.name);
           break;
         }
         case "interrupted":

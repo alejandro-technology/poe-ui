@@ -5,6 +5,7 @@ export type VoiceState =
   | "connecting"
   | "listening"
   | "thinking"
+  | "tool"
   | "speaking"
   | "error";
 
@@ -19,6 +20,7 @@ export interface UseVoiceLiveResult {
   reconnecting: boolean;
   inputTranscript: string;
   outputTranscript: string;
+  activeToolName: string | null;
   error: string | null;
   muted: boolean;
   conversationId: string | null;
@@ -41,6 +43,7 @@ export function useVoiceLive(options: UseVoiceLiveOptions): UseVoiceLiveResult {
   const [reconnecting, setReconnecting] = useState(false);
   const [inputTranscript, setInputTranscript] = useState("");
   const [outputTranscript, setOutputTranscript] = useState("");
+  const [activeToolName, setActiveToolName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [muted, setMuted] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -126,6 +129,7 @@ export function useVoiceLive(options: UseVoiceLiveOptions): UseVoiceLiveResult {
     setReconnecting(false);
     setMuted(false);
     mutedRef.current = false;
+    setActiveToolName(null);
     const cid = conversationId;
     void options.refresh();
     if (cid) void options.selectConversation(cid);
@@ -142,6 +146,7 @@ export function useVoiceLive(options: UseVoiceLiveOptions): UseVoiceLiveResult {
     setConversationId(null);
     setMuted(false);
     mutedRef.current = false;
+    setActiveToolName(null);
 
     let stream: MediaStream;
     try {
@@ -244,6 +249,15 @@ export function useVoiceLive(options: UseVoiceLiveOptions): UseVoiceLiveResult {
         setState("speaking");
         setOutputTranscript((prev) => prev + text);
       },
+      onToolStart: (name) => {
+        clearThinkingTimer();
+        setActiveToolName(name);
+        setState("tool");
+      },
+      onToolResult: () => {
+        setActiveToolName(null);
+        setState((prev) => (prev === "tool" ? "thinking" : prev));
+      },
       onInterrupted: () => {
         clearThinkingTimer();
         playbackNodeRef.current?.port.postMessage({ type: "clear" });
@@ -331,6 +345,7 @@ export function useVoiceLive(options: UseVoiceLiveOptions): UseVoiceLiveResult {
     reconnecting,
     inputTranscript,
     outputTranscript,
+    activeToolName,
     error,
     muted,
     conversationId,

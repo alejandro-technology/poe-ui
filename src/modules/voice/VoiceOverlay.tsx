@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Mic, MicOff, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Orb } from "../fx";
+import type { OrbEnergyState } from "../fx";
 import { motion } from "motion/react";
 import type { VoiceState } from "./useVoiceLive";
 
@@ -10,6 +11,7 @@ export interface VoiceOverlayProps {
   reconnecting: boolean;
   inputTranscript: string;
   outputTranscript: string;
+  activeToolName: string | null;
   error: string | null;
   muted: boolean;
   onToggleMute: () => void;
@@ -17,14 +19,18 @@ export interface VoiceOverlayProps {
   onRetry: () => void;
 }
 
-function orbEnergyState(state: VoiceState): "idle" | "thinking" | "streaming" | "error" {
+function orbEnergyState(state: VoiceState): OrbEnergyState {
   if (state === "thinking") return "thinking";
+  if (state === "tool") return "tool";
   if (state === "speaking") return "streaming";
   if (state === "error") return "error";
   return "idle";
 }
 
-function statusLabel(state: VoiceState): string {
+function statusLabel(
+  state: VoiceState,
+  activeToolName: string | null,
+): string {
   switch (state) {
     case "connecting":
       return "Conectando con Poe…";
@@ -32,6 +38,10 @@ function statusLabel(state: VoiceState): string {
       return "Escuchando…";
     case "thinking":
       return "Pensando…";
+    case "tool":
+      return activeToolName === null
+        ? "Ejecutando herramienta…"
+        : `Ejecutando ${activeToolName}…`;
     case "speaking":
       return "Poe está hablando…";
     case "error":
@@ -46,6 +56,7 @@ export function VoiceOverlay({
   reconnecting,
   inputTranscript,
   outputTranscript,
+  activeToolName,
   error,
   muted,
   onToggleMute,
@@ -118,7 +129,7 @@ export function VoiceOverlay({
           </div>
         ) : (
           <p className="text-sm text-white/70 min-h-[1.25rem]">
-            {inputTranscript || statusLabel(state)}
+            {inputTranscript || statusLabel(state, activeToolName)}
           </p>
         )}
       </div>

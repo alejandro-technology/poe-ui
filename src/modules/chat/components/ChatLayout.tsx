@@ -290,6 +290,7 @@ export function ChatLayout() {
             reconnecting={voice.reconnecting}
             inputTranscript={voice.inputTranscript}
             outputTranscript={voice.outputTranscript}
+            activeToolName={voice.activeToolName}
             error={voice.error}
             muted={voice.muted}
             onToggleMute={voice.toggleMute}
