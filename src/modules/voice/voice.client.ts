@@ -64,8 +64,11 @@ export class VoiceClient {
     });
   }
 
-  sendStart(): void {
-    this.sendText({ type: "start" });
+  sendStart(conversationId?: string): void {
+    this.sendText({
+      type: "start",
+      ...(conversationId !== undefined ? { conversationId } : {}),
+    });
   }
 
   sendStop(): void {

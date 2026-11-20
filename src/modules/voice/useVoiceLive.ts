@@ -24,7 +24,7 @@ export interface UseVoiceLiveResult {
   error: string | null;
   muted: boolean;
   conversationId: string | null;
-  open: () => Promise<void>;
+  open: (resumeConversationId?: string) => Promise<void>;
   close: () => void;
   retry: () => Promise<void>;
   toggleMute: () => void;
@@ -60,6 +60,7 @@ export function useVoiceLive(options: UseVoiceLiveOptions): UseVoiceLiveResult {
   const mutedRef = useRef(false);
   const closingRef = useRef(false);
   const thinkingTimerRef = useRef<number | null>(null);
+  const conversationIdRef = useRef<string | null>(null);
 
   const clearThinkingTimer = useCallback(() => {
     if (thinkingTimerRef.current !== null) {
@@ -135,7 +136,7 @@ export function useVoiceLive(options: UseVoiceLiveOptions): UseVoiceLiveResult {
     if (cid) void options.selectConversation(cid);
   }, [cleanupAudio, clearThinkingTimer, conversationId, options]);
 
-  const open = useCallback(async () => {
+  const open = useCallback(async (resumeConversationId?: string) => {
     closingRef.current = false;
     setActive(true);
     setState("connecting");
@@ -237,6 +238,7 @@ export function useVoiceLive(options: UseVoiceLiveOptions): UseVoiceLiveResult {
 
     const client = new VoiceClient({
       onSession: (cid, _model) => {
+        conversationIdRef.current = cid;
         setConversationId(cid);
         setState("listening");
       },
@@ -318,13 +320,14 @@ export function useVoiceLive(options: UseVoiceLiveOptions): UseVoiceLiveResult {
       return;
     }
     clientRef.current = client;
-    client.sendStart();
+    client.sendStart(resumeConversationId);
   }, [cleanupAudio, clearThinkingTimer, scheduleThinking, options]);
 
   const retry = useCallback(async () => {
+    const resumeId = conversationIdRef.current;
     close();
     await new Promise((r) => window.setTimeout(r, 100));
-    await open();
+    await open(resumeId ?? undefined);
   }, [close, open]);
 
   const toggleMute = useCallback(() => {

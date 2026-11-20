@@ -276,7 +276,7 @@ export function ChatLayout() {
               disabled={isSending || online === false}
               onSend={sendMessage}
               orbState={orbState}
-              onVoiceClick={() => void voice.open()}
+              onVoiceClick={() => void voice.open(activeConversationId ?? undefined)}
               voiceEnabled={online === true && voiceAvailable}
             />
           </section>
